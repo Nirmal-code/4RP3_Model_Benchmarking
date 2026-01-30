@@ -14,8 +14,12 @@ SENTIMENT_LABELS = ["anger", "disgust", "fear", "sadness", "joy", "love", "surpr
 def build_prompt(text: str) -> str:
     # Keep the output constrained to one of the allowed labels to reduce drift.
     return (
-        "Task: Sentiment classification.\n"
-        "Return ONLY valid JSON like {\"sentiment\":\"<label>\"}.\n\n"
+        "Task: Emotion classification.\n"
+        "Choose exactly ONE label for the dominant emotion in the text.\n"
+        "Labels: anger, disgust, fear, sadness, joy, love, surprise, optimism.\n"
+        "If none strongly apply, choose the closest overall tone.\n"
+        "Pick the label that best fits; do not default to anger unless the text expresses hostility/irritation. \n"
+        "Return ONLY JSON in this exact schema: {\"sentiment\":\"<label>\"}.\n\n"
         f"Text: {text}\n"
     )
 
@@ -35,15 +39,16 @@ def extract_json_label(generation: str) -> str:
             obj = json.loads(candidate)
             if isinstance(obj, dict) and "sentiment" in obj:
                 s = str(obj["sentiment"]).strip().lower()
-                return s
+                if s in SENTIMENT_LABELS:
+                    return s
         except Exception:
             pass
 
-    # # Fallback: keyword search
-    # low = generation.lower()
-    # for lab in SENTIMENT_LABELS:
-    #     if lab in low:
-    #         return lab
+    # Fallback: keyword search
+    low = generation.lower()
+    for lab in SENTIMENT_LABELS:
+        if lab in low:
+            return lab
     return "unknown"
 
 
