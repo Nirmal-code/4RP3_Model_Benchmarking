@@ -16,7 +16,7 @@ def build_prompt(text: str) -> str:
     return (
         "Task: Sentiment classification.\n"
         "Labels: anger, disgust, fear, sadness, joy, love, surprise, optimism.\n"
-        "Return ONLY valid JSON like {\"sentiment\":\"joy\"}.\n\n"
+        "Return one or more detected emotions\n"
         f"Text: {text}\n"
     )
 
