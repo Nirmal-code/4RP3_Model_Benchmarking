@@ -15,7 +15,6 @@ def build_prompt(text: str) -> str:
     # Keep the output constrained to one of the allowed labels to reduce drift.
     return (
         "Task: Sentiment classification.\n"
-        "Labels: anger, disgust, fear, sadness, joy, love, surprise, optimism.\n"
         "Return ONLY valid JSON like {\"sentiment\":\"<label>\"}.\n\n"
         f"Text: {text}\n"
     )
@@ -36,16 +35,15 @@ def extract_json_label(generation: str) -> str:
             obj = json.loads(candidate)
             if isinstance(obj, dict) and "sentiment" in obj:
                 s = str(obj["sentiment"]).strip().lower()
-                if s in SENTIMENT_LABELS:
-                    return s
+                return s
         except Exception:
             pass
 
-    # Fallback: keyword search
-    low = generation.lower()
-    for lab in SENTIMENT_LABELS:
-        if lab in low:
-            return lab
+    # # Fallback: keyword search
+    # low = generation.lower()
+    # for lab in SENTIMENT_LABELS:
+    #     if lab in low:
+    #         return lab
     return "unknown"
 
 
