@@ -9,7 +9,7 @@ export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME}"
 export TOKENIZERS_PARALLELISM=false
 
-MODEL_ID="${MODEL_ID:-deepseek-ai/DeepSeek-LLM-7B-Instruct}"
+MODEL_ID="${MODEL_ID:-deepseek-ai/deepseek-coder-6.7b-instruct}"
 INPUT_CSV="${1:-data/filtered_emotions.csv}"
 OUTPUT_CSV="${2:-outputs/deepseek_preds.csv}"
 
