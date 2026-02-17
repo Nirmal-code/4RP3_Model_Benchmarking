@@ -36,8 +36,12 @@ def generate_confusion_matrix(annotator_pred: Dict[str, Dict[str, str]], model_p
         model_label = model_pred[text_id]
         if (not choosen_annotator): 
             for annotator_label in annotators.values():
+                if ((annotator_label and annotator_label not in labels) or model_label not in labels):
+                    continue
                 matrix[labels[annotator_label]][labels[model_label]] += 1
         else:
+            if (model_label not in labels):
+                    continue
             annotator_label = annotators.get(choosen_annotator)
             matrix[labels[annotator_label]][labels[model_label]] += 1
     
