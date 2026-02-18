@@ -1,10 +1,18 @@
 import argparse
 import csv
+import os
 from typing import List
+from pathlib import Path
+
+# Disable Torch compile/Inductor/Triton to avoid building C/CUDA extensions (Python.h missing on server)
+os.environ.setdefault("TORCH_COMPILE_DISABLE", "1")
+os.environ.setdefault("TORCHINDUCTOR_DISABLE", "1")
+os.environ.setdefault("TORCHDYNAMO_DISABLE", "1")
+os.environ.setdefault("TRITON_DISABLE", "1")
 
 import torch
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
 
 
 META_COLS = {
@@ -41,17 +49,36 @@ def main():
     if args.text_field not in df.columns:
         raise ValueError(f"Missing text field '{args.text_field}' in input CSV")
 
-    label_cols = [c for c in df.columns if c not in META_COLS and c != args.text_field]
-    if not label_cols:
-        raise ValueError("Could not infer label columns.")
+    model_dir = Path(args.model_dir)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    tokenizer = AutoTokenizer.from_pretrained(args.model_dir, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_dir, use_fast=True)
+
+    # Prefer label order saved during training; fallback to config; then CSV
+    labels_path = model_dir / "labels.txt"
+    if labels_path.exists():
+        label_cols = labels_path.read_text(encoding="utf-8").splitlines()
+    else:
+        cfg = AutoConfig.from_pretrained(model_dir, trust_remote_code=True)
+        if getattr(cfg, "id2label", None):
+            label_cols = [cfg.id2label[i] for i in range(cfg.num_labels)]
+        else:
+            label_cols = [c for c in df.columns if c not in META_COLS and c != args.text_field]
+            if not label_cols:
+                raise ValueError("Could not infer label columns.")
+
+    # Load model using saved head shape
     model = AutoModelForSequenceClassification.from_pretrained(
-        args.model_dir,
-        num_labels=len(label_cols),
-        problem_type="multi_label_classification",
+        model_dir,
+        trust_remote_code=True,
     ).to(device)
+    model.config.problem_type = "multi_label_classification"
+    if len(label_cols) != model.config.num_labels:
+        raise ValueError(
+            f"Label count mismatch: labels.txt/config has {model.config.num_labels}, "
+            f"but inferred {len(label_cols)} labels ({label_cols}). "
+            "Ensure you're using the labels saved with the trained model."
+        )
     model.eval()
 
     # Match deepseek_preds.csv shape: id, text, pred_sentiment (no raw_output).

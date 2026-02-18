@@ -1,0 +1,10 @@
+matrix_id,general
+true\pred,anger,disgust,fear,sadness,joy,love,surprise,optimism
+anger,532,113,54,40,37,3,27,3
+disgust,220,153,44,30,19,0,23,2
+fear,125,34,86,12,19,0,22,1
+sadness,266,63,37,211,25,12,16,3
+joy,361,20,13,17,335,12,23,7
+love,347,14,5,23,223,111,24,4
+surprise,234,40,23,19,67,2,123,5
+optimism,295,39,55,68,212,17,47,37
